@@ -2,9 +2,10 @@ using DrWatson
 @quickactivate "VAR_estimation"
 
 using DataFrames, DataFramesMeta, CSV
-using CairoMakie
+using CairoMakie, UnicodePlots
 using Statistics
 using TerminalPager
+using LinearAlgebra
 
 include(srcdir("functions.jl"))
 
@@ -39,24 +40,152 @@ hcat(gtdata[2, :]', gtdata[1, :]') # Z0
 
 Z_array = Array{Float64}(undef, 90, 6)
 for i in 1:90
-    Z_array[i,:] = hcat(gtdata[i+1, :]', gtdata[i, :]')
+    Z_array[i, :] = hcat(gtdata[i+1, :]', gtdata[i, :]')
 end
 Z = Z_array'
 
-A = (Z' \ Y')' 
+A = (Z' \ Y')'
 
-Sigma_u = (Y - A*Z) * (Y - A*Z)' / (92 - 3*2 - 1)
+Sigma_u = (Y - A * Z) * (Y - A * Z)' / (92 - 3 * 2 - 1)
 
 ############### Estimate the VAR model by LS estimation function ###############
 VAR_estimation = VAR(gtdata, 4)
 
 # get the estimated parameters
-A = get_params(VAR_estimation[1], 3, 4)
+A = get_params(VAR_estimation[:A], 3, 4)
 A1 = A[1]
 A2 = A[2]
 A3 = A[3]
 A4 = A[4]
 
-############### Long term restrictitons ###############
+############### estimations ###############
+estimations = VAR_estimation[:A] * VAR_estimation[:Z]
+errors = VAR_estimation[:Y] - estimations
+
+fig = Figure(size=(900, 600))
+
+ax = Axis(fig[1, 1])
+
+lines!(ax, estimations[1, :], label="estimation")
+lines!(ax, estimations[1, :] + errors[1, :], label="estimation + errors", color=(:green), linestyle=:dash, linewidth=2)
+lines!(ax, VAR_estimation[2][1, :], label="observed")
+
+axislegend(ax)
+
+fig
+
+############### Longterm restrictions ###############
+# Applyin the Blanchad and Qua method
+# we need the Theta matrix: chol(A(1)^1ΣuA(1)^1')
+# where A(1) = (I_k - A1 - A2 - ... - Ap)
+A_1 = Matrix(I, 3, 3) - A1 - A2 - A3 - A4
+A_1_inv = inv(A_1)
+Θ_1 = cholesky(Hermitian(A_1_inv * VAR_estimation[:Σu] * A_1_inv')).L
+
+B_0_inv = A_1 * Θ_1
+B_0 = inv(B_0_inv)
+
+# structural parameters
+B1 = B_0 * A1
+B2 = B_0 * A2
+B3 = B_0 * A3
+B4 = B_0 * A4
+
+B = hcat(B1, B2, B3, B4)
+
+############### Impulse Response Functions ###############
+# J matrix J = [I_k, 0kxk(p-1)]
+J = hcat(Matrix(I, 3, 3), zeros(3, 9))
+# Matrix
+A = vcat(
+    hcat(A1, A2, A3, A4),
+    hcat(Matrix(I, 9, 9), zeros(9, 3))
+)
+
+
+periods = 50
+IRF = Array{Float64}(undef, 3, 3, periods)
+
+for i in 1:periods
+    IRF[:, :, i] = (J * A^i * J') * B_0_inv
+end
+
+s = 20
+
+fig = Figure(size=(900, 600))
+
+ax = Axis(
+    fig[1, 1],
+    title="GDP Structural Impulse Function\nTo inflation shock",
+    xgridvisible=false,
+    ygridvisible=false
+)
+
+lines!(
+    IRF[1, 2, 1:s]
+)
+
+hlines!(
+    ax,
+    0
+)
+
+ax = Axis(
+    fig[2, 1],
+    title="Inflatión Structural Impulse Function\nTo inflation shock",
+    xgridvisible=false,
+    ygridvisible=false
+)
+
+lines!(
+    IRF[2, 2, 1:s]
+)
+
+hlines!(
+    ax,
+    0
+)
+
+fig
+
+
+fig = Figure(size=(900, 600))
+
+ax = Axis(
+    fig[1, 1],
+    title="GDP Structural Impulse Function\nTo real interest rate shock",
+    xgridvisible=false,
+    ygridvisible=false
+)
+
+lines!(
+    IRF[1, 3, 1:s]
+)
+
+hlines!(
+    ax,
+    0
+)
+
+ax = Axis(
+    fig[2, 1],
+    title="Inflatión Structural Impulse Function\nTo real interest rate shock",
+    xgridvisible=false,
+    ygridvisible=false
+)
+
+lines!(
+    IRF[2, 3, 1:s]
+)
+
+hlines!(
+    ax,
+    0
+)
+
+fig
+
+sum(IRF[1, 2, 1:s]) / sum(IRF[2, 2, 1:s])
+sum(IRF[1, 3, 1:s]) / sum(IRF[2, 3, 1:s])
 
 
