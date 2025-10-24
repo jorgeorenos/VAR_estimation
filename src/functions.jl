@@ -35,13 +35,26 @@ function VAR(data::AbstractMatrix, p::Int=1, intercept::Bool=false)
 
     A = (Z' \ Y')'
 
-    Σu = (Y - A*Z) * (Y - A*Z)' / (T - K * p - 1)
+    Σu = (Y - A * Z) * (Y - A * Z)' / (T - K * p - 1)
 
-    return (A = A, Σu = Σu)
+    #return (A = A, Y=Y, Z=Z, Σu = Σu)
+
+    return Dict(
+        "A" => A,
+        "Y" => Y,
+        "Z" => Z,
+        "Σu" => Σu
+    )
 end
 
+
+"""
+get_params()
+
+Funtion that provides a matrix with the estimate coefficients
+"""
 function get_params(VAR, K::Int, p::Int)
-    T = K*p
+    T = K * p
 
     get = (VAR, x::Int, y::Int) -> VAR[:, x:y]
     y = K:K:T
