@@ -52,15 +52,15 @@ Sigma_u = (Y - A * Z) * (Y - A * Z)' / (92 - 3 * 2 - 1)
 VAR_estimation = VAR(gtdata, 4)
 
 # get the estimated parameters
-A = get_params(VAR_estimation[:A], 3, 4)
+A = get_params(VAR_estimation["A"], 3, 4)
 A1 = A[1]
 A2 = A[2]
 A3 = A[3]
 A4 = A[4]
 
 ############### estimations ###############
-estimations = VAR_estimation[:A] * VAR_estimation[:Z]
-errors = VAR_estimation[:Y] - estimations
+estimations = VAR_estimation["A"] * VAR_estimation["Z"]
+errors = VAR_estimation["Y"] - estimations
 
 fig = Figure(size=(900, 600))
 
@@ -68,7 +68,7 @@ ax = Axis(fig[1, 1])
 
 lines!(ax, estimations[1, :], label="estimation")
 lines!(ax, estimations[1, :] + errors[1, :], label="estimation + errors", color=(:green), linestyle=:dash, linewidth=2)
-lines!(ax, VAR_estimation[2][1, :], label="observed")
+lines!(ax, VAR_estimation["Y"][1, :], label="observed")
 
 axislegend(ax)
 
@@ -80,7 +80,7 @@ fig
 # where A(1) = (I_k - A1 - A2 - ... - Ap)
 A_1 = Matrix(I, 3, 3) - A1 - A2 - A3 - A4
 A_1_inv = inv(A_1)
-Θ_1 = cholesky(Hermitian(A_1_inv * VAR_estimation[:Σu] * A_1_inv')).L
+Θ_1 = cholesky(Hermitian(A_1_inv * VAR_estimation["Σu"] * A_1_inv')).L
 
 B_0_inv = A_1 * Θ_1
 B_0 = inv(B_0_inv)
@@ -186,6 +186,5 @@ hlines!(
 fig
 
 sum(IRF[1, 2, 1:s]) / sum(IRF[2, 2, 1:s])
-sum(IRF[1, 3, 1:s]) / sum(IRF[2, 3, 1:s])
 
 
