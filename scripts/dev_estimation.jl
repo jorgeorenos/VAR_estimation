@@ -6,6 +6,8 @@ using CairoMakie, UnicodePlots
 using Statistics
 using TerminalPager
 using LinearAlgebra
+using Infiltrator
+using Revise
 
 include(srcdir("functions.jl"))
 
@@ -52,7 +54,7 @@ Sigma_u = (Y - A * Z) * (Y - A * Z)' / (92 - 3 * 2 - 1)
 VAR_estimation = VAR(gtdata, 4)
 
 # get the estimated parameters
-A = get_params(VAR_estimation["A"], 3, 4)
+A = get_params(VAR_estimation)
 A1 = A[1]
 A2 = A[2]
 A3 = A[3]
@@ -93,6 +95,9 @@ B4 = B_0 * A4
 
 B = hcat(B1, B2, B3, B4)
 
+# comparing with the BQ_VAR function
+BQ_VAR(VAR_estimation)["B_0_inv"] .- B_0_inv # produce the same results
+
 ############### Impulse Response Functions ###############
 # J matrix J = [I_k, 0kxk(p-1)]
 J = hcat(Matrix(I, 3, 3), zeros(3, 9))
@@ -102,12 +107,17 @@ A = vcat(
     hcat(Matrix(I, 9, 9), zeros(9, 3))
 )
 
+A_test = vcat(
+    VAR_estimation["A"],
+    hcat(Matrix(I, 9, 9), zeros(9, 3))
+)
 
-periods = 50
-IRF = Array{Float64}(undef, 3, 3, periods)
+
+periods = 20
+IRF_struct = Array{Float64}(undef, 3, 3, periods)
 
 for i in 1:periods
-    IRF[:, :, i] = (J * A^i * J') * B_0_inv
+    IRF_struct[:, :, i] = (J * A^i * J') * B_0_inv
 end
 
 s = 20
@@ -122,7 +132,7 @@ ax = Axis(
 )
 
 lines!(
-    IRF[1, 2, 1:s]
+    IRF_struct[1, 2, 1:s]
 )
 
 hlines!(
@@ -138,7 +148,7 @@ ax = Axis(
 )
 
 lines!(
-    IRF[2, 2, 1:s]
+    IRF_struct[2, 2, 1:s]
 )
 
 hlines!(
@@ -148,43 +158,12 @@ hlines!(
 
 fig
 
+#Sacrifice ratio
+sum(IRF_struct[1, 2, 1:s]) / sum(IRF_struct[2, 2, 1:s])
 
-fig = Figure(size=(900, 600))
-
-ax = Axis(
-    fig[1, 1],
-    title="GDP Structural Impulse Function\nTo real interest rate shock",
-    xgridvisible=false,
-    ygridvisible=false
-)
-
-lines!(
-    IRF[1, 3, 1:s]
-)
-
-hlines!(
-    ax,
-    0
-)
-
-ax = Axis(
-    fig[2, 1],
-    title="Inflatión Structural Impulse Function\nTo real interest rate shock",
-    xgridvisible=false,
-    ygridvisible=false
-)
-
-lines!(
-    IRF[2, 3, 1:s]
-)
-
-hlines!(
-    ax,
-    0
-)
-
-fig
-
-sum(IRF[1, 2, 1:s]) / sum(IRF[2, 2, 1:s])
+# comparing with the IRF function
+IRF_function = IRF(VAR_estimation, periods, true)
+# Sacrifice ratio
+sum(IRF_function[1, 2, :]) / sum(IRF_function[2, 2, :])
 
 
