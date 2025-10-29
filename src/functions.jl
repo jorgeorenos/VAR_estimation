@@ -121,14 +121,15 @@ end
 function IRF(VAR_est, periods::Int=20, structural::Bool=false)
 
     K = VAR_est["K"]
-    
+    p = VAR_est["p"]
+
     # J Matrix
-    J = hcat(Matrix(I, K, K), zeros(K, K*K))
+    J = hcat(Matrix(I, K, K), zeros(K, K*(p-1)))
     
     # A Matrix
     A = vcat(
         VAR_est["A"],
-        hcat(Matrix(I, K^2, K^2), zeros(K^2, K))
+        hcat(Matrix(I, K*(p-1), K*(p-1)), zeros(K*(p-1), K))
     )
 
     IRF = Array{Float64}(undef, K, K, periods)
