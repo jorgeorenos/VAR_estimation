@@ -151,30 +151,3 @@ function IRF(VAR_est, periods::Int=20, structural::Bool=false)
     return IRF
 
 end
-
-"""
-returns the sacrifice ratio: sr_cr
-
-"""
-function compute_sacrifice_ratio(irf_g::AbstractVector, irf_dpi::AbstractVector, K::Int;
-                                 irf_is_gap::Bool=false)
-    @assert length(irf_g) ≥ K && length(irf_dpi) ≥ K "The IRFs must have the same length"
-
-    y_level_t = irf_is_gap ? copy(irf_g[1:K]) : cumsum(irf_g[1:K])
-
-    # short term SR 
-    short_run_sr = similar(y_level_t)
-    
-    for t in 1:K
-        denom = irf_dpi[t]
-        short_run_sr[t] = y_level_t[t] / denom
-    end
-
-    sr   = sum(short_run_sr)
-    
-    return sr
-end
-
-
-
-
