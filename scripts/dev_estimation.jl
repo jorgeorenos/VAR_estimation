@@ -107,12 +107,6 @@ A = vcat(
     hcat(Matrix(I, 9, 9), zeros(9, 3))
 )
 
-A_test = vcat(
-    VAR_estimation["A"],
-    hcat(Matrix(I, 9, 9), zeros(9, 3))
-)
-
-
 periods = 20
 IRF_struct = Array{Float64}(undef, 3, 3, periods)
 
