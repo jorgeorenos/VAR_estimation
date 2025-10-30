@@ -28,7 +28,7 @@ function VAR(data::AbstractMatrix, p::Int=1, intercept::Bool=false)
 
     # Define the Z matrix
     if intercept
-        Z = hcat(hones(Teff), Z_array)'
+        Z = hcat(ones(Teff), Z_array)'
     else
         Z = Z_array'
     end
@@ -150,4 +150,19 @@ function IRF(VAR_est, periods::Int=20, structural::Bool=false)
 
     return IRF
 
+end
+
+function compute_sacrifice_ratio(irf_g, irf_inf, K)
+    y_level_t = copy(irf_g)
+
+    short_run_sr = similar(y_level_t)
+
+    for t in 1:K
+        denom = irf_inf[t]
+        short_run_sr[t] = y_level_t[t] / denom
+    end
+
+    sr = sum(short_run_sr)
+
+    return sr
 end
