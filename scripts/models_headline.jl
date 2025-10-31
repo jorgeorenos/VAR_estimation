@@ -203,6 +203,68 @@ save(
     px_per_unit = 2.0
 )
 
+# Plot for the VAR(4)
+fig = Figure(size = (800, 600))
+
+Label(
+    fig[0, 1], 
+    "Funciones Impulso Respuesta del modelo VAR estructural",
+    fontsize = 25
+    )
+
+ax = Axis(
+    fig[1,1],
+    title = "Respuesta del producto",
+    xgridvisible = false,
+    ygridvisible = false
+)
+
+hidespines!(ax, :r, :t)
+
+lines!(
+    ax,
+    IRFs_d4_ln["VAR_4"][1,2,:].*-1,
+    color = :blue,
+    linewidth = 2
+)
+
+hlines!(
+    ax,
+    0,
+    color = :black,
+    linewidth = 1
+)
+
+ax = Axis(
+    fig[2,1],
+    title = "Respuesta de la inflación",
+    xgridvisible = false,
+    ygridvisible = false
+)
+
+hidespines!(ax, :r, :t)
+
+lines!(
+    ax,
+    IRFs_d4_ln["VAR_4"][2,2,:].*-1,
+    color = :blue,
+    linewidth = 2
+)
+
+hlines!(
+    ax,
+    0,
+    color = :black,
+    linewidth = 1
+)
+
+fig
+save(
+    plotsdir("headline", "IRFs_VAR(4).png"),
+    fig,
+    px_per_unit = 2.0
+)
+
 ########## Simulation for VAR(4) for y-o-y data ###################
 VAR_4 = VAR(data_headline_d4_ln_mat, 4)
 IRFs_4 = IRF(VAR_4, l, true)
