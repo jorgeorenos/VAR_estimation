@@ -1,34 +1,27 @@
-function Quarterly(df::DataFrame, date::Symbol; drop_incomplete::Bool=true)
-    # 1. year and quarter columns
-    years      = year.(df[!, date])
-    quarter = floor.((month.(df[!, date]) .- 1) ./ 3) .+ 1
+function hodrick_prescott_filter(y, lambda)
+    T = size(y, 1)
+    matrix = zeros(T, T)
 
-    # 2. Create a copy of the dataframe with the new columns
-    df2 = copy(df)
-    df2[!,:year]       = years
-    df2[!,:quarter] = quarter
+    matrix[1, 1:3] = [1 + lambda, -2 * lambda, lambda]
+    matrix[2, 1:4] = [-2 * lambda, 1 + 5 * lambda, -4 * lambda, lambda]
 
-    # 3. numeric columns
-    cols_num = filter(col -> eltype(df2[!, col]) <: Number, names(df2))
-
-    # 4. group by year and quarter, then aggregate by mean
-    g = groupby(df2, [:year, :quarter])
-    # add a count column to identify incomplete quarters
-    agg = combine(g,
-                  cols_num .=> mean .=> cols_num,
-                  nrow     .=> :count)
-
-    # 5. Drop incomplete quarters if specified
-    if drop_incomplete
-        agg = filter(row -> row.count == 3, agg)
+    for i = 3 : T - 2
+        matrix[i, i-2 : i+2] = [lambda, -4*lambda, 1 + 6 * lambda, -4 * lambda, lambda]
     end
 
-    # 6. Create a date column for the start of the quarter
-    agg[!,:dates] = Date.(agg.year,
-                           (agg.quarter .- 1) .* 3 .+ 1,
-                           1)
+    matrix[T-1, T-3:T] = [lambda, -4 * lambda, 1 + 5 * lambda, -2 * lambda]
+    matrix[T, T-2:T] = [lambda, -2 * lambda, 1 + lambda]
 
-    # 7. Ordenar y seleccionar sólo date+variables
-    sort!(agg, :dates)
-    select(agg, :dates, cols_num...)
+    trend = matrix \ y
+    cycle = y - trend
+
+    return cycle
+end
+
+function remove_outliers(data; lw = 0.10, up = 0.90)
+    q1 = quantile(data, lw)
+    q2 = quantile(data, up)
+    lower_bound = q1
+    upper_bound = q2
+    return filter(x -> lower_bound < x < upper_bound, data)
 end

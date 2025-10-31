@@ -165,3 +165,4 @@ UnicodePlots.lineplot(
 UnicodePlots.lineplot(
     data_headline_mat[:,3]
 )
+
