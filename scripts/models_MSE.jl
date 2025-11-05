@@ -268,6 +268,52 @@ save(
 
 sum(cumsum(IRFs_d4_ln_sub["VAR_2"][1,3,:]))/sum(IRFs_d4_ln_sub["VAR_2"][2,3,:])
 
+########## Sacrifice Ratio path ########## 
+SR_path =
+    map(1:20) do l
+        sum(cumsum(IRFs_d4_ln_sub["VAR_4"][1, 2, 1:l])) / sum(IRFs_d4_ln_sub["VAR_4"][2, 2, 1:l])
+    end
+
+SR_path[4:4:20]
+
+
+fig = Figure()
+
+ax = Axis(
+    fig[1, 1],
+    title="Trayectoria del coeficiente de sacrificio
+    Modelo con inflación subyacente óptima MSE",
+    xgridvisible=false,
+    ygridvisible=false,
+    xticks = (4:4:20, ["1", "2", "3", "4", "5"]),
+    xlabel = "años",
+    ylabel = "Coeficiente de sacrificio"
+)
+
+hidespines!(ax, :r, :t)
+ylims!(-0.35, 0.55)
+
+CairoMakie.barplot!(
+    ax,
+    4:4:20,
+    SR_path[4:4:20],
+    bar_labels = :y
+)
+
+hlines!(
+    ax,
+    0,
+    color = :black
+)
+
+fig
+
+save(
+    plotsdir("sub", "SR path.png"),
+    fig,
+    px_per_unit = 2.0
+)
+
 
 ########## Simulation for VAR(4) for y-o-y data ###################
 VAR_4 = VAR(data_MSE_d4_ln_mat, 4)
@@ -276,7 +322,7 @@ SR_point = sum(cumsum(IRFs_4[1,2,:]))/sum(IRFs_4[2,2,:])
 
 # simulation
 Random.seed!(1234)
-replications = 10000
+replications = 11200
 SR_sim = Array{Float64}(undef, replications)
 for j in 1:replications
     VAR_4 = VAR(data_MSE_d4_ln_mat, 4)
@@ -315,14 +361,13 @@ fig = Figure(size = (900, 600))
 ax = Axis(
     fig[1,1],
     title = "Histograma del coeficientes de sacrifico
-    9800 simulaciones",
+    10000 simulaciones",
     xgridvisible = false,
     ygridvisible =false
 )
 
 hist!(ax, SR_clean)
-vlines!(ax, SR_point, color = :black, label = "Estimación para datos observados $(round(SR_point, digits = 2))")
-vlines!(ax, mean(SR_clean), color = :black, linestyle = :dash, label = "simulaciones $(round(mean(SR_clean), digits = 2))")
+vlines!(ax, SR_point, color = :black, label = "Estimación para datos observados $(round(SR_point, digits = 4))")
 
 axislegend()
 fig
