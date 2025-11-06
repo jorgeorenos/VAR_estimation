@@ -26,9 +26,9 @@ GT_log_data = CSV.read(
 
 dates = GT_log_data.dates[17:end]
 
-GT_log_data.dates = Date("2001-03"):Month(3):Date("2024-12")
-UnicodePlots.lineplot(hodrick_prescott_filter(GT_log_data.ln_y, 1600))
-GT_log_data.y_gap = hodrick_prescott_filter(GT_log_data.ln_y, 1600)
+GT_log_data.dates = Date("2001-03"):Month(3):Date("2025-6")
+hodrick_filter = hodrick_prescott_filter(GT_log_data.ln_y, 1600)
+GT_log_data.y_gap = hodrick_filter[1]
 
 # data for headline inflation
 data_headline = @chain GT_log_data begin

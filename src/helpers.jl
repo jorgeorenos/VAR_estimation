@@ -15,7 +15,7 @@ function hodrick_prescott_filter(y, lambda)
     trend = matrix \ y
     cycle = y - trend
 
-    return cycle
+    return (cycle, trend)
 end
 
 function remove_outliers(data; lw = 0.10, up = 0.90)
