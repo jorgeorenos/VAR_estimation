@@ -250,9 +250,7 @@ end
 """
     theta_sequence(VAR_est, H) -> Thetas
 
-Devuelve un Vector{Matrix{Float64}} con Θ₀,…,Θ_{H-1}, donde
-Θᵢ = Φᵢ * B0_inv y Φᵢ = J * A_c^i * J'.
-No usa observaciones pasadas.
+ Devuelve un Vector{Matrix{Float64}} con Θ_i,…,Θ_{H-1}, 
 """
 function theta_sequence(VAR_est, H::Int)
     K = VAR_est["K"]; p = VAR_est["p"]
@@ -281,15 +279,9 @@ function theta_sequence(VAR_est, H::Int)
 end
 
 """
-    forecast_from_structural_shocks(VAR_est, H; shock_path=nothing,
-                                    shock_idx=1, shock_size=-1.0, shock_h=1)
+    forecast_from_structural_shocks()
 
-Pronóstico condicional "MA puro":
-ŷ_{t+h|t} = ∑_{i=0}^{h-1} Θᵢ w_{t+h-i}, h=1..H.
-
-- Si no pasas `shock_path`, aplica un único choque estructural de tamaño
-  `shock_size` en el índice `shock_idx` en el paso `shock_h`.
-- Si pasas `shock_path`, debe ser una matriz K×H con los choques futuros w_{t+1..t+H}.
+    Pronóstico condicional 
 """
 function forecast_from_structural_shocks(VAR_est, H::Int;
                                          shock_idx::Int=1, shock_size::Real=-1.0, shock_h::Int=1)
@@ -297,11 +289,11 @@ function forecast_from_structural_shocks(VAR_est, H::Int;
     K = VAR_est["K"]
     Θ = theta_sequence(VAR_est, H)                      # Θ₀..Θ_{H-1}
 
-    # Camino de choques futuros (estructurales, var=I)
+    # choque futuro
     W = zeros(K, H) 
     W[shock_idx, shock_h] = shock_size
 
-    # Construye pronóstico condicional sin baseline (MA puro)
+    # Construye pronóstico condicional 
     Ycond = zeros(K, H)
     for h in 1:H
         acc = zeros(K)
@@ -310,6 +302,6 @@ function forecast_from_structural_shocks(VAR_est, H::Int;
         end
         Ycond[:, h] = acc
     end
-    return Ycond   # columnas: y_{t+1|t}, …, y_{t+H|t}
+    return Ycond   
 end
 
